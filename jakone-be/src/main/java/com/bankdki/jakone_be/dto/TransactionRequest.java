@@ -1,10 +1,23 @@
 package com.bankdki.jakone_be.dto;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 public class TransactionRequest {
-    private String type;    // "DEPOSIT" or "WITHDRAWAL"
-    private String channel; // "CASH", "TRANSFER", "QRIS"
+
+    @NotBlank(message = "Transaction type is required")
+    @Pattern(regexp = "^(?i)(DEPOSIT|WITHDRAWAL)$", message = "Transaction type must be DEPOSIT or WITHDRAWAL")
+    private String type;
+
+    @NotBlank(message = "Channel is required")
+    @Pattern(regexp = "^(?i)(CASH|TRANSFER|QRIS)$", message = "Channel must be CASH, TRANSFER, or QRIS")
+    private String channel;
+
+    @NotNull(message = "Amount is required")
+    @DecimalMin(value = "10000.00", message = "Transaction amount must be at least 10,000.00")
     private BigDecimal amount;
 
     public String getType() { return type; }
