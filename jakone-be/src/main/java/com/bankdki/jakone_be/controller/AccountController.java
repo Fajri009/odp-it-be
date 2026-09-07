@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bankdki.jakone_be.dto.RegisterRequest;
+import com.bankdki.jakone_be.dto.TransactionRequest;
+import com.bankdki.jakone_be.dto.TransactionResponse;
 import com.bankdki.jakone_be.entity.Account;
 import com.bankdki.jakone_be.service.AccountService;
 
@@ -33,5 +35,14 @@ public class AccountController {
     public ResponseEntity<Account> getAccount(@PathVariable String accountNumber) {
         Account account = accountService.getAccountByNumber(accountNumber);
         return ResponseEntity.ok(account);
+    }
+
+    // Core Use Cases 2 & 3: Add Funds & Withdraw
+    @PostMapping("/{accountNumber}/transact")
+    public ResponseEntity<TransactionResponse> transact(
+            @PathVariable String accountNumber,
+            @RequestBody TransactionRequest request) {
+        TransactionResponse response = accountService.processTransaction(accountNumber, request);
+        return ResponseEntity.ok(response);
     }
 }

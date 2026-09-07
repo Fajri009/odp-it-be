@@ -1,20 +1,30 @@
 package com.bankdki.jakone_be.service;
 
+import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;
 
 import com.bankdki.jakone_be.dto.RegisterRequest;
+import com.bankdki.jakone_be.dto.TransactionRequest;
+import com.bankdki.jakone_be.dto.TransactionResponse;
 import com.bankdki.jakone_be.entity.Account;
 import com.bankdki.jakone_be.repository.AccountRepository;
+import com.bankdki.jakone_be.strategy.TransactionStrategy;
 
 @Service
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    // Spring automatically injects all Beans implementing TransactionStrategy into this Map,
+    // keyed by their component name ("DEPOSIT", "WITHDRAWAL")
+    private final Map<String, TransactionStrategy> transactionStrategies;
 
-    public AccountService(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository,
+            Map<String, TransactionStrategy> transactionStrategies) {
         this.accountRepository = accountRepository;
+        this.transactionStrategies = transactionStrategies;
     }
 
     public Account registerAccount(RegisterRequest request) {
@@ -33,5 +43,29 @@ public class AccountService {
     public Account getAccountByNumber(String accountNumber) {
         return accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + accountNumber));
+    }
+
+    public TransactionResponse processTransaction(String accountNumber, TransactionRequest request) {
+        Account account = getAccountByNumber(accountNumber);
+
+        // Fetch strategy bean dynamically using the request type ("DEPOSIT" or "WITHDRAWAL")
+        TransactionStrategy strategy = transactionStrategies.get(request.getType().toUpperCase());
+        if (strategy == null) {
+            throw new IllegalArgumentException("Invalid transaction type: " + request.getType());
+        }
+
+        // Execute domain strategy logic
+        strategy.execute(account, request.getAmount());
+
+        // Save updated balance
+        accountRepository.save(account);
+
+        return new TransactionResponse(
+            account.getAccountNumber(),
+            request.getType().toUpperCase(),
+            request.getAmount(),
+            account.getBalance(),
+            LocalDateTime.now()
+        );
     }
 }
